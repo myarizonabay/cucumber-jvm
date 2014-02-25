@@ -62,4 +62,9 @@ class JavaStepDefinition implements StepDefinition {
     public String getPattern() {
         return pattern.pattern();
     }
+
+	@Override
+	public Method getMethod() {
+		return this.method;
+	}
 }

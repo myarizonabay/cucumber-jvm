@@ -1,22 +1,59 @@
 package cucumber.runtime.junit;
 
-import cucumber.runtime.io.ClasspathResourceLoader;
-import cucumber.runtime.model.CucumberFeature;
-import cucumber.runtime.model.CucumberScenario;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import gherkin.I18n;
 import gherkin.formatter.model.Step;
-import org.junit.Test;
-import org.junit.runner.Description;
 
 import java.util.Collections;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.Description;
+import org.mockito.Mock;
+import static org.mockito.Mockito.*;
+import org.mockito.MockitoAnnotations;
+
+import cucumber.runtime.Glue;
+import cucumber.runtime.StepDefinition;
+import cucumber.runtime.StepDefinitionMatch;
+import cucumber.runtime.io.ClasspathResourceLoader;
+import cucumber.runtime.model.CucumberFeature;
+import cucumber.runtime.model.CucumberScenario;
 
 public class ExecutionUnitRunnerTest {
-    @Test
+	
+	@Mock
+	cucumber.runtime.Runtime runtime;
+	
+	@Mock
+	Glue glue;
+	
+	@Mock
+	StepDefinitionMatch stepMatch;
+	
+	@Mock
+	StepDefinition stepDef;
+	
+	@Before
+	public void initMocks() throws Exception {
+		MockitoAnnotations.initMocks(this);
+		mockStepDefinitions();
+	}
+	
+    private void mockStepDefinitions() throws Exception {
+    	when(stepMatch.getStepDefinition()).thenReturn(stepDef);
+    	when(stepDef.getMethod()).thenReturn(StepDefinition.class.getMethod("getMethod"));
+    	when(glue.stepDefinitionMatch(anyString(), any(Step.class), any(I18n.class)))
+    		.thenReturn(stepMatch);
+    	when(runtime.getGlue()).thenReturn(glue);
+	}
+
+	@Test
     public void shouldAssignUnequalDescriptionsToDifferentOccurrencesOfSameStepInAScenario() throws Exception {
+   	
         List<CucumberFeature> features = CucumberFeature.load(
                 new ClasspathResourceLoader(this.getClass().getClassLoader()),
                 asList("cucumber/runtime/junit/fb.feature"),
@@ -24,7 +61,7 @@ public class ExecutionUnitRunnerTest {
         );
 
         ExecutionUnitRunner runner = new ExecutionUnitRunner(
-                null,
+        		runtime,
                 (CucumberScenario) features.get(0).getFeatureElements().get(0),
                 null
         );
@@ -42,6 +79,33 @@ public class ExecutionUnitRunnerTest {
 
         assertFalse("Descriptions must not be equal.", stepDescription1.equals(stepDescription2));
     }
+	
+    @Test
+    public void shouldAssignScenarioNameWhenStepDefNotFound() throws Exception {
+    	//Simulates no step definition written yet
+    	when(glue.stepDefinitionMatch(anyString(), any(Step.class), any(I18n.class)))
+    		.thenReturn(null);
+    	when(runtime.getGlue()).thenReturn(glue);
+    	verify(stepDef, never()).getMethod();
+    	verify(stepMatch, never()).getStepDefinition();
+        List<CucumberFeature> features = CucumberFeature.load(
+                new ClasspathResourceLoader(this.getClass().getClassLoader()),
+                asList("cucumber/runtime/junit/feature_with_same_steps_in_different_scenarios.feature"),
+                Collections.emptyList()
+        );
+
+        ExecutionUnitRunner runner = new ExecutionUnitRunner(
+                runtime,
+                (CucumberScenario) features.get(0).getFeatureElements().get(0),
+                null
+        );
+
+        // fish out the data from runner
+        Description runnerDescription = runner.getDescription();
+        Description stepDescription = runnerDescription.getChildren().get(0);
+
+        assertEquals("description includes scenario name as class name", "Scenario: first", stepDescription.getClassName());
+    }
 
     @Test
     public void shouldIncludeScenarioNameAsClassNameInStepDescriptions() throws Exception {
@@ -52,7 +116,7 @@ public class ExecutionUnitRunnerTest {
         );
 
         ExecutionUnitRunner runner = new ExecutionUnitRunner(
-                null,
+                runtime,
                 (CucumberScenario) features.get(0).getFeatureElements().get(0),
                 null
         );
@@ -62,7 +126,7 @@ public class ExecutionUnitRunnerTest {
         Description runnerDescription = runner.getDescription();
         Description stepDescription = runnerDescription.getChildren().get(0);
 
-        assertEquals("description includes scenario name as class name", runner.getName(), stepDescription.getClassName());
+        assertEquals("description includes scenario name as class name", "cucumber.runtime.StepDefinition", stepDescription.getClassName());
         assertEquals("description includes step keyword and name as method name", step.getKeyword() + step.getName(), stepDescription.getMethodName());
     }
 }

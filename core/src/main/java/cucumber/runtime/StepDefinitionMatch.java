@@ -155,4 +155,8 @@ public class StepDefinitionMatch extends Match {
     public String getStepName() {
         return step.getName();
     }
+    
+    public StepDefinition getStepDefinition(){
+    	return stepDefinition;
+    }
 }

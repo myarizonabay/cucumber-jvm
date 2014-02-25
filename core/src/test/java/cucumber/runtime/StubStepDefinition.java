@@ -55,4 +55,9 @@ public class StubStepDefinition implements StepDefinition {
     public String getPattern() {
         return pattern;
     }
+
+	@Override
+	public Method getMethod() {
+		return this.method;
+	}
 }

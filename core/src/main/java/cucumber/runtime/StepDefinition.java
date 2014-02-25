@@ -4,6 +4,7 @@ import gherkin.I18n;
 import gherkin.formatter.Argument;
 import gherkin.formatter.model.Step;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.List;
 
@@ -14,6 +15,8 @@ public interface StepDefinition {
      * and bigger sizes if it matches several.
      */
     List<Argument> matchedArguments(Step step);
+    
+    Method getMethod();
 
     /**
      * The source line where the step definition is defined.

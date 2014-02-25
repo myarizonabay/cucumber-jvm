@@ -1,16 +1,20 @@
 package cucumber.runtime.junit;
 
-import cucumber.runtime.Runtime;
-import cucumber.runtime.model.CucumberScenario;
 import gherkin.formatter.model.Step;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.ParentRunner;
 import org.junit.runners.model.InitializationError;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import cucumber.runtime.Runtime;
+import cucumber.runtime.StepDefinition;
+import cucumber.runtime.StepDefinitionMatch;
+import cucumber.runtime.model.CucumberScenario;
 
 /**
  * Runs a scenario, or a "synthetic" scenario derived from an Examples row.
@@ -70,7 +74,7 @@ public class ExecutionUnitRunner extends ParentRunner<Step> {
     protected Description describeChild(Step step) {
         Description description = stepDescriptions.get(step);
         if (description == null) {
-            description = Description.createTestDescription(getName(), step.getKeyword() + step.getName(), step);
+            description = Description.createTestDescription(getStepDefinitionName(step), step.getKeyword() + step.getName(), step);
             stepDescriptions.put(step, description);
         }
         return description;
@@ -91,4 +95,13 @@ public class ExecutionUnitRunner extends ParentRunner<Step> {
         throw new UnsupportedOperationException();
         // cucumberScenario.runStep(step, jUnitReporter, runtime);
     }
+    
+	private String getStepDefinitionName(Step step) {
+		StepDefinitionMatch stepDefinitionMatch = runtime.getGlue().stepDefinitionMatch(cucumberScenario.getFeature().getPath(), step, cucumberScenario.getFeature().getI18n());
+		if(stepDefinitionMatch != null){
+			StepDefinition stepDefinition = stepDefinitionMatch.getStepDefinition();
+        	return stepDefinition.getMethod().getDeclaringClass().getName();
+        }
+        return getName();
+	}
 }

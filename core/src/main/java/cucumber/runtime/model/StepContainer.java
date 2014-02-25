@@ -18,6 +18,10 @@ public class StepContainer {
         this.cucumberFeature = cucumberFeature;
         this.statement = statement;
     }
+    
+    public CucumberFeature getFeature(){
+    	return cucumberFeature;
+    }
 
     public List<Step> getSteps() {
         return steps;
